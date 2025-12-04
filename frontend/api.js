@@ -6,7 +6,7 @@ async function seedDemo() {
   try {
     const res = await fetch(`${API_BASE}/demo/seed`, { method: "POST" });
     const data = await res.json();
-    statusEl.textContent = `OK: ${data.message} (user_id = ${data.user_id})`;
+    statusEl.textContent = `OK: ${data.message}`;
   } catch (err) {
     console.error(err);
     statusEl.textContent = "Error cargando datos de demo.";
