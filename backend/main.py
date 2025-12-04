@@ -15,6 +15,7 @@ from recommender import (
     index_user_profile,
     index_exercise,
     get_recommendations_for_user,
+    reset_indices,
 )
 
 app = FastAPI(title="Recommender Engine Demo - Simple")
@@ -58,6 +59,7 @@ def recommend_exercises(user_id: str, k: int = 5):
 
 @app.post("/demo/seed")
 def seed_demo_data():
+    reset_indices() 
     user = UserProfileIn(
         languages=["en"],
         current_level=3,
@@ -65,6 +67,22 @@ def seed_demo_data():
         error_profile=ErrorProfile(grammar_tense_past=0.8, vocabulary_food=0.2),
     )
     index_user_profile("u_demo", user)
+
+    user_past = UserProfileIn(
+        languages=["en"],
+        current_level=3,
+        course_progress=CourseProgress(units_completed=5, streak_days=10),
+        error_profile=ErrorProfile(grammar_tense_past=0.9, vocabulary_food=0.1),
+    )
+    index_user_profile("u_past", user_past)
+
+    user_food = UserProfileIn(
+        languages=["en"],
+        current_level=3,
+        course_progress=CourseProgress(units_completed=5, streak_days=10),
+        error_profile=ErrorProfile(grammar_tense_past=0.1, vocabulary_food=0.9),
+    )
+    index_user_profile("u_food", user_food)
 
     ex_past = ExerciseIn(
         language="en",
@@ -82,6 +100,8 @@ def seed_demo_data():
         difficulty=2,
         usage_stats=UsageStats(global_success_rate=0.75, times_solved=210000),
     )
+
+    
     ex_travel = ExerciseIn(
         language="en",
         course_id="en_base",

@@ -17,23 +17,55 @@ def embed_text(text: str):
 
 
 def build_user_text_representation(user: UserProfileIn) -> str:
-    langs = ", ".join(user.languages)
+    langs = ", ".join(user.languages) if user.languages else "no language"
     error_profile = user.error_profile or ErrorProfile()
-    error_desc = (
-        f"grammar_tense_past:{error_profile.grammar_tense_past:.2f} "
-        f"vocabulary_food:{error_profile.vocabulary_food:.2f}"
-    )
-    text = f"User learning {langs} at level {user.current_level}. Errors: {error_desc}"
-    return text
+
+    parts = [f"User studying {langs} at level {user.current_level}."]
+
+    if error_profile.grammar_tense_past > error_profile.vocabulary_food:
+        parts.append(
+            "This learner has serious problems with PAST TENSE verbs: did, went, saw, "
+            "traveled, worked yesterday and last week. Past tense is the main weakness. "
+            "Food vocabulary is not a big issue."
+        )
+    else:
+        parts.append(
+            "This learner has serious problems with FOOD vocabulary: restaurant, menu, "
+            "pizza, salad, ingredients, dishes. Food words are the main weakness. "
+            "Past tense is not a big issue."
+        )
+
+    return " ".join(parts)
+
 
 
 def build_exercise_text_representation(ex: ExerciseIn) -> str:
-    tags = ", ".join(ex.skill_tags)
-    text = (
-        f"Exercise in language {ex.language} with skills {tags} "
-        f"and difficulty {ex.difficulty}."
+    tags = set(ex.skill_tags or [])
+
+    if "past_tense" in tags:
+        return (
+            "Exercise focused ONLY on PAST TENSE verbs. "
+            "Practice sentences with did, went, saw, traveled, worked yesterday and last week. "
+            "No food vocabulary. Pure past tense grammar practice."
+        )
+
+    if "food" in tags:
+        return (
+            "Exercise focused ONLY on FOOD vocabulary. "
+            "Practice words like restaurant, menu, pizza, salad, ingredients, dishes, meal. "
+            "No past tense verbs. Pure food vocabulary practice."
+        )
+
+    if "travel" in tags:
+        return (
+            "Exercise focused on TRAVEL vocabulary. "
+            "Practice words like airport, ticket, hotel, flight, suitcase, luggage, boarding."
+        )
+
+    return (
+        f"General language exercise in {ex.language} with tags {', '.join(tags)} "
+        f"and difficulty level {ex.difficulty}."
     )
-    return text
 
 
 # ----- Mappings de índices -----
@@ -131,6 +163,13 @@ def index_exercise(exercise_id: str, exercise: ExerciseIn) -> None:
         "content_embedding": embedding,
     }
     es.index(index="exercise_recommendation_items", id=exercise_id, document=body)
+
+
+def reset_indices():
+    for idx in ["user_learning_profiles", "exercise_recommendation_items"]:
+        if es.indices.exists(index=idx):
+            es.indices.delete(index=idx)
+    init_indices()
 
 
 # ----- Recomendaciones -----
